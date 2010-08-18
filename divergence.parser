@@ -340,13 +340,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 __3c6177256de0fddb721f534c3ad8c0ee
 
-meta::data('name', 'literate-project');
+meta::data('name', 'divergence.parser');
 meta::data('output-dir', '/tmp');
-meta::data('pdf-output-file', '/tmp/literate-project.nWsn/document.pdf');
+meta::data('pdf-output-file', '/tmp/divergence.parser.T2co/document.pdf');
 meta::data('pdf-reader', '/usr/bin/evince');
 meta::data('pdftex-command', 'pdflatex -output-directory=__TEMPORARY_DIRECTORY__ __INPUT_FILE__');
 meta::data('quiet', '1');
-meta::data('source-directory', '/tmp/src');
+meta::data('source-directory', 'src');
 meta::data('table-of-contents', '1');
 meta::data('tex-command', 'latex -output-directory=__TEMPORARY_DIRECTORY__ __INPUT_FILE__');
 meta::data('watching', '0');
@@ -1171,6 +1171,34 @@ __6999988eaf441c9b1282e03e1db427b5
 meta::message_color('state', 'purple');
 meta::message_color('states', 'yellow');
 meta::message_color('watch', 'blue');
+meta::parent('/home/spencertipping/bin/literate-project', <<'__5eee3de9c142e281acc39863fa696ed1');
+function::clean
+function::compile
+function::make
+function::render
+function::tex
+function::view
+internal_function::main
+meta::externalize_template
+meta::functor::code-templates
+meta::functor::tex-templates
+meta::template::code
+meta::template::document
+meta::template::enumeration
+meta::template::math
+meta::template::sections
+meta::type::resource
+meta::type::section
+parent::development
+resource::header
+resource::header-languages
+resource::header-listings
+resource::header-packages
+resource::header-refs
+resource::header-resource
+vim_highlighter::cltex
+__5eee3de9c142e281acc39863fa696ed1
+
 meta::parent('development', <<'__0e0a735b31c0a04070af3203430bb11d');
 parent::notes
 parent::preprocessor
@@ -1313,105 +1341,48 @@ __5a7e0bd196996326e6278b6dc308371c
 
 meta::resource('header-refs', '\newcommand{\Ref}[2]{\hyperref[#2]{#1 \ref*{#2}}}');
 meta::resource('header-resource', '\lstnewenvironment{resourcecode}{}{}');
-meta::section('introduction', <<'__da922cd923eedb4306efb6920b9ebc91');
+meta::section('introduction', <<'__10348c1d0a8385c6c69ac897465daca5');
 - s1 Introduction | sec:introduction
-  This Perl object gives you a way to integrate documentation, code, and tests into one linearized format. \Ref{Section}{sec:introduction-code} goes over this in more detail.
+  The Divergence parser combinator library is a port of the Scala or Haskell parser combinators into JavaScript. The notation benefits from using Rebase (thus enabling operator overloading),
+  but it isn't necessary. Each parser method has both an identifier name and an operator name.
 
-  Here are some features:
-
-  - itemize << end
-    - item Impossible to use
-    - item Unfathomably complex to maintain
+  - javascript divergence.parser.js << end
+    d.rebase (function () {
+      var p = d.parser = function () {return d.parser.parse.apply (this, arguments)};
   - end
+__10348c1d0a8385c6c69ac897465daca5
 
-  And the costs associated with using this technology are:
-
-  - enumerate << end
-    - item Developers must know self-modifying Perl.
-           This is very rare!
-    - item If something breaks, you are sunk.
-  - end
-
-  - s2 Code | sec:introduction-code
-    Code is entered in literate form. For example:
-
-  - resource build << end
-    #!/bin/bash
-    g++ hello.cc -o hello
-    javac Hello.java
-  - end
-
-  - cpp hello.cc << end
-    #include <iostream>
-    int main () {
-      std::cout << "Hello world" << std::endl;
-      return 0;
-    }
-  - end
-
-  - java Hello.java << end
-    public class Hello {
-      public static void main (final String[] args) {
-        System.out.println ("Hello world");
-      }
-    }
-  - end
-
-  - javascript hello.js << end
-    document.getElementById ('hi').appendChild (
-      document.createTextNode ('Hi there!'));
-  - end
-
-  - html hello.html << end
-    <html>
-      <body>
-        <div id='hi'></div>
-        <script src='hello.js'></script>
-      </body>
-    </html>
-  - end
-
-  - asm false.s << end
-    main:
-      mov $1, %eax
-      ret
-  - end
-
-  - resource >> build << end
-    g++ false.s -o false
-  - end
-__da922cd923eedb4306efb6920b9ebc91
-
-meta::section('main', <<'__589811f7266bdf4ec8b030aeb648dddc');
+meta::section('main', <<'__853089e3fc95a0224da15c5de7325d60');
 - documentclass article
 - include resource::header
 
-- title  Literate Project
+- title  Divergence Parser Combinators
 - author Spencer Tipping
 
 - document << end
   - maketitle
   - tableofcontents
 
-  - comment This is a line comment that will not appear in the TeX source.
-  - comment Block comment syntax is shown below:
-
-  - comment << end
-    This text will not appear in the TeX source either.
-
-    - comment << end
-      Nor will this text, and comments are nestable as long as either the
-      EOF markers or indentation levels differ.
-    - end
-
-  - comment << eof
-    Same indentation level, different EOF marker.
-  - eof
-  - end
-  
   - include section::introduction
+  - include section::stream
 - end
-__589811f7266bdf4ec8b030aeb648dddc
+__853089e3fc95a0224da15c5de7325d60
+
+meta::section('stream', <<'__b68efdbc519241a0339f4b34af9a91e9');
+- s1 Streams | sec:streams
+  A stream is an immutable list of objects. In this case, a stream is an indexed proxy over a string. It must support the \verb|head()| and \verb|tail()| methods, where \verb|tail()| should
+  return a new stream minus the head. Technically this could all be done using strings directly, but the head/tail notation is convenient.
+
+  - javascript >> divergence.parser.js << end
+    p.indexed_stream = (index, empty) >$> '@xs = $0, @position = $1 || 0'.ctor ({
+      empty: '$0.call(@xs, @position)'.fn(empty.fn()),
+       head: '$0.call(@xs, @position)'.fn(index.fn()),
+       tail: 'new @constructor (@xs, @position + 1)'.fn()});
+
+    p.string_stream = p.indexed_stream ('@charAt($0)', '$0 >= @length');
+    p.array_stream  = p.indexed_stream ('$_[$0]',      '$0 >= @length');
+  - end
+__b68efdbc519241a0339f4b34af9a91e9
 
 meta::template('comment', "'';     # A mechanism for line or block comments.");
 meta::template('eval', <<'__7be1d470a07a06c58e971bc7fc24c048');
