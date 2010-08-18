@@ -342,7 +342,7 @@ __3c6177256de0fddb721f534c3ad8c0ee
 
 meta::data('name', 'divergence.parser');
 meta::data('output-dir', '/tmp');
-meta::data('pdf-output-file', '/tmp/divergence.parser.T2co/document.pdf');
+meta::data('pdf-output-file', '/tmp/divergence.parser.nfPo/document.pdf');
 meta::data('pdf-reader', '/usr/bin/evince');
 meta::data('pdftex-command', 'pdflatex -output-directory=__TEMPORARY_DIRECTORY__ __INPUT_FILE__');
 meta::data('quiet', '1');
@@ -1341,16 +1341,26 @@ __5a7e0bd196996326e6278b6dc308371c
 
 meta::resource('header-refs', '\newcommand{\Ref}[2]{\hyperref[#2]{#1 \ref*{#2}}}');
 meta::resource('header-resource', '\lstnewenvironment{resourcecode}{}{}');
-meta::section('introduction', <<'__10348c1d0a8385c6c69ac897465daca5');
+meta::section('introduction', <<'__91485fca258d818fa9df99db0d8a159c');
 - s1 Introduction | sec:introduction
   The Divergence parser combinator library is a port of the Scala or Haskell parser combinators into JavaScript. The notation benefits from using Rebase (thus enabling operator overloading),
-  but it isn't necessary. Each parser method has both an identifier name and an operator name.
+  but it isn't necessary. Each parser method has both an identifier name and optionally an operator name.
 
   - javascript divergence.parser.js << end
     d.rebase (function () {
-      var p = d.parser = function () {return d.parser.parse.apply (this, arguments)};
+      var p = d.parser = '@matcher = $0'.ctor ({
+          fn: '@bound("match")'.fn(),
+        fail: '{failure: $0}'.fn(),
+        pass: '{stream: $0, result: $1}'.fn(),
+       match: '@matcher.apply(this, @_)'.fn()});
+
+      d.rebase.alias_in (d.parser.prototype, {
+        '%$%': 'fail',
+          '*': 'match'});
+
+      d.functional(p.prototype);
   - end
-__10348c1d0a8385c6c69ac897465daca5
+__91485fca258d818fa9df99db0d8a159c
 
 meta::section('main', <<'__853089e3fc95a0224da15c5de7325d60');
 - documentclass article
@@ -1367,6 +1377,40 @@ meta::section('main', <<'__853089e3fc95a0224da15c5de7325d60');
   - include section::stream
 - end
 __853089e3fc95a0224da15c5de7325d60
+
+meta::section('parser', <<'__93bfbcb3e161c3e0e0a4daa8a3ed10a8');
+- s1 Parsers | sec:parsers
+  Parsing a CFG is a recursive process. There are base cases (i.e.~terminal elements) and operators on parsers. The basic idea is that a parser will return one of two things. It can return an
+  object of the form \verb|{stream, result}| to indicate success (in which case the stream is the original minus whatever input was consumed), or an object of the form \verb|{failure, ...}| to
+  indicate a failure state.
+
+  - s2 Terminal parser | sec:parsers-terminal
+    This is a simple parser to match a terminal character. For coding simplicity, I'm just providing one for strings, though you could easily write one for other data types given a suitable
+    equality operator.
+
+    - javascript >> divergence.parser.js << end
+      p.terminal = match >$> (stream >$>
+        (stream.head() === match ?
+          this.pass (stream.tail(), match) :
+          this %$% 'Expected "#{match}" but found (#{stream.head()})'));
+    - end
+
+  - s2 Sequence parser | sec:parsers-sequence
+    This parses one element and then another. It fails if either parser fails. If both parsers succeed, the result is \verb|[r1, r2]|, where \verb|r1| is the result from the first parser and
+    \verb|r2| is the result from the second.
+
+    - javascript >> divergence.parser.js << end
+      p.sequence = (p1, p2) >$> (stream >$>
+        ((p1 * stream, this) |$> ((m1, t) >$>
+          (m1.failure ? t %$% m1.failure :
+            (p2 * m1.stream |$> (m2 >$>
+              (m2.failure ? t %$% m2.failure :
+                this.pass (m2.stream, [m1.result, m2.result]))))))));
+      d.init (p.prototype, {
+        then: 'new @constructor($0($_, $1))'.fn (p.sequence)});
+      d.rebase.alias_in (p.prototype, {'<<': 'then'});
+    - end
+__93bfbcb3e161c3e0e0a4daa8a3ed10a8
 
 meta::section('stream', <<'__b68efdbc519241a0339f4b34af9a91e9');
 - s1 Streams | sec:streams
