@@ -342,7 +342,7 @@ __3c6177256de0fddb721f534c3ad8c0ee
 
 meta::data('name', 'divergence.parser');
 meta::data('output-dir', '/tmp');
-meta::data('pdf-output-file', '/tmp/divergence.parser.nfPo/document.pdf');
+meta::data('pdf-output-file', '/tmp/divergence.parser.9mmy/document.pdf');
 meta::data('pdf-reader', '/usr/bin/evince');
 meta::data('pdftex-command', 'pdflatex -output-directory=__TEMPORARY_DIRECTORY__ __INPUT_FILE__');
 meta::data('quiet', '1');
@@ -1341,7 +1341,13 @@ __5a7e0bd196996326e6278b6dc308371c
 
 meta::resource('header-refs', '\newcommand{\Ref}[2]{\hyperref[#2]{#1 \ref*{#2}}}');
 meta::resource('header-resource', '\lstnewenvironment{resourcecode}{}{}');
-meta::section('introduction', <<'__91485fca258d818fa9df99db0d8a159c');
+meta::section('closing', <<'__540c394f08c8e505b080cf3cd90e43d1');
+  - javascript >> divergence.parser.js << end
+    }) ();
+  - end
+__540c394f08c8e505b080cf3cd90e43d1
+
+meta::section('introduction', <<'__f331c057258d818fa9df99db0d8a159c');
 - s1 Introduction | sec:introduction
   The Divergence parser combinator library is a port of the Scala or Haskell parser combinators into JavaScript. The notation benefits from using Rebase (thus enabling operator overloading),
   but it isn't necessary. Each parser method has both an identifier name and optionally an operator name.
@@ -1356,13 +1362,13 @@ meta::section('introduction', <<'__91485fca258d818fa9df99db0d8a159c');
 
       d.rebase.alias_in (d.parser.prototype, {
         '%$%': 'fail',
-          '*': 'match'});
+          '%': 'match'});
 
       d.functional(p.prototype);
   - end
-__91485fca258d818fa9df99db0d8a159c
+__f331c057258d818fa9df99db0d8a159c
 
-meta::section('main', <<'__853089e3fc95a0224da15c5de7325d60');
+meta::section('main', <<'__7c52377abad549203a113c2c026596ce');
 - documentclass article
 - include resource::header
 
@@ -1375,14 +1381,26 @@ meta::section('main', <<'__853089e3fc95a0224da15c5de7325d60');
 
   - include section::introduction
   - include section::stream
+  - include section::parser
+  - include section::closing
 - end
-__853089e3fc95a0224da15c5de7325d60
+__7c52377abad549203a113c2c026596ce
 
-meta::section('parser', <<'__93bfbcb3e161c3e0e0a4daa8a3ed10a8');
+meta::section('parser', <<'__d492cdb201b7f32d47802326fb4a501e');
 - s1 Parsers | sec:parsers
   Parsing a CFG is a recursive process. There are base cases (i.e.~terminal elements) and operators on parsers. The basic idea is that a parser will return one of two things. It can return an
   object of the form \verb|{stream, result}| to indicate success (in which case the stream is the original minus whatever input was consumed), or an object of the form \verb|{failure, ...}| to
   indicate a failure state.
+
+  - s2 Parser extensions | sec:parser-extensions
+    These functions provide a uniform way to extend the parser class with custom combinators.
+
+    - javascript >> divergence.parser.js << end
+      var def_combinator = (name, operator, matcher) >$>
+        (p[name] = matcher,
+         p.prototype[name] = p.prototype[operator] =
+           'new @constructor($0($_, $1))'.fn (matcher));
+    - end
 
   - s2 Terminal parser | sec:parsers-terminal
     This is a simple parser to match a terminal character. For coding simplicity, I'm just providing one for strings, though you could easily write one for other data types given a suitable
@@ -1390,29 +1408,57 @@ meta::section('parser', <<'__93bfbcb3e161c3e0e0a4daa8a3ed10a8');
 
     - javascript >> divergence.parser.js << end
       p.terminal = match >$> (stream >$>
-        (stream.head() === match ?
+        (! stream.empty() && stream.head() === match ?
           this.pass (stream.tail(), match) :
           this %$% 'Expected "#{match}" but found (#{stream.head()})'));
     - end
 
-  - s2 Sequence parser | sec:parsers-sequence
-    This parses one element and then another. It fails if either parser fails. If both parsers succeed, the result is \verb|[r1, r2]|, where \verb|r1| is the result from the first parser and
-    \verb|r2| is the result from the second.
+    It is also useful to have a parser that matches on end of input:
 
     - javascript >> divergence.parser.js << end
-      p.sequence = (p1, p2) >$> (stream >$>
-        ((p1 * stream, this) |$> ((m1, t) >$>
-          (m1.failure ? t %$% m1.failure :
-            (p2 * m1.stream |$> (m2 >$>
-              (m2.failure ? t %$% m2.failure :
-                this.pass (m2.stream, [m1.result, m2.result]))))))));
-      d.init (p.prototype, {
-        then: 'new @constructor($0($_, $1))'.fn (p.sequence)});
-      d.rebase.alias_in (p.prototype, {'<<': 'then'});
+      p.end = stream >$>
+        (stream.empty() ? this.pass (stream, null) :
+          this %$% 'Expected end of input, but found #{stream.head()}');
     - end
-__93bfbcb3e161c3e0e0a4daa8a3ed10a8
 
-meta::section('stream', <<'__b68efdbc519241a0339f4b34af9a91e9');
+  - s2 Sequence combinator | sec:parsers-sequence
+    This parses one element and then another. It fails if either parser fails. If both parsers succeed, the result is a \verb|list_stream| of the result from each one. If the second is not a
+    stream, then it is consed into a stream that is consed onto the empty stream for uniformity.
+
+    - javascript >> divergence.parser.js << end
+      def_combinator ('sequence', '<<', (p1, p2) >$> (stream >$>
+        ((p1 % stream, this) |$> ((m1, t) >$>
+          (m1.failure ? t %$% m1.failure :
+            (p2 % m1.stream |$> (m2 >$>
+              (m2.failure ? t %$% m2.failure :
+                this.pass (m2.stream, new p.list_stream (m1.result, m2.result))))))))));
+    - end
+
+  - s2 Disjunctive combinator | sec:parsers-disjunctive
+    This parses one element using two alternatives. If the first fails, then the second is used. If the second fails, then neither is used and the disjunction fails. The result is as returned
+    from whichever parser was successful.
+
+    - javascript >> divergence.parser.js << end
+      def_combinator ('disjunction', '|', (p1, p2) >$> (stream >$>
+        ((p1 % stream, this) |$> ((m1, t) >$>
+          (m1.stream ? m1 :
+            (p2 % stream |$> (m2 >$>
+              (m2.stream ? m2 :
+                this %$% m2.failure))))))));
+    - end
+
+  - s2 Mapping combinator | sec:parsers-map
+    Provides an opportunity to change the result value by mapping it through a function. Because of the parser-function isomorphism, you can use this on another parser to achieve composition.
+
+    - javascript >> divergence.parser.js << end
+      def_combinator ('map', '*', (p, f) >$> (stream >$>
+        ((p % stream, this) |$> ((m, t) >$>
+          (m.failure ? t %$% m.failure :
+            this.pass (m.stream, f.fn()(m.result)))))));
+    - end
+__d492cdb201b7f32d47802326fb4a501e
+
+meta::section('stream', <<'__169ab457bbd4b8136e8572962ac69c44');
 - s1 Streams | sec:streams
   A stream is an immutable list of objects. In this case, a stream is an indexed proxy over a string. It must support the \verb|head()| and \verb|tail()| methods, where \verb|tail()| should
   return a new stream minus the head. Technically this could all be done using strings directly, but the head/tail notation is convenient.
@@ -1423,10 +1469,15 @@ meta::section('stream', <<'__b68efdbc519241a0339f4b34af9a91e9');
        head: '$0.call(@xs, @position)'.fn(index.fn()),
        tail: 'new @constructor (@xs, @position + 1)'.fn()});
 
+    p.empty_stream = {empty: _ >$> true};
+
     p.string_stream = p.indexed_stream ('@charAt($0)', '$0 >= @length');
     p.array_stream  = p.indexed_stream ('$_[$0]',      '$0 >= @length');
+    p.list_stream   =
+      '@h = $1, $t = $2.empty ? $2 : new $0.list_stream ($2, $0.empty_stream)'.fn (p).ctor ({
+      empty: _ >$> false, head: '@h'.fn(), tail: '@t'.fn()});
   - end
-__b68efdbc519241a0339f4b34af9a91e9
+__169ab457bbd4b8136e8572962ac69c44
 
 meta::template('comment', "'';     # A mechanism for line or block comments.");
 meta::template('eval', <<'__7be1d470a07a06c58e971bc7fc24c048');
