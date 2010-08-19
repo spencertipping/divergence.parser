@@ -1,6 +1,6 @@
 d.rebase (function () {
   var p = d.parser = '@matcher = $0'.ctor ({
-      fn: '@bound("match")'.fn(),
+      fn: '"fn".of("match".of($_)).apply(null, @_)'.fn(),
     fail: '{failure: $0}'.fn(),
     pass: '{stream: $0, result: $1}'.fn(),
    match: '@matcher.apply(this, @_)'.fn()});

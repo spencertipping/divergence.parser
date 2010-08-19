@@ -342,7 +342,7 @@ __3c6177256de0fddb721f534c3ad8c0ee
 
 meta::data('name', 'divergence.parser');
 meta::data('output-dir', '/tmp');
-meta::data('pdf-output-file', '/tmp/divergence.parser.LahH/document.pdf');
+meta::data('pdf-output-file', '/tmp/divergence.parser.3EQj/document.pdf');
 meta::data('pdf-reader', '/usr/bin/evince');
 meta::data('pdftex-command', 'pdflatex -output-directory=__TEMPORARY_DIRECTORY__ __INPUT_FILE__');
 meta::data('quiet', '1');
@@ -1347,7 +1347,7 @@ meta::section('closing', <<'__540c394f08c8e505b080cf3cd90e43d1');
   - end
 __540c394f08c8e505b080cf3cd90e43d1
 
-meta::section('introduction', <<'__f331c057258d818fa9df99db0d8a159c');
+meta::section('introduction', <<'__1826c413c24c3c4c37172433f44ddefd');
 - s1 Introduction | sec:introduction
   The Divergence parser combinator library is a port of the Scala or Haskell parser combinators into JavaScript. The notation benefits from using Rebase (thus enabling operator overloading),
   but it isn't necessary. Each parser method has both an identifier name and optionally an operator name.
@@ -1355,7 +1355,7 @@ meta::section('introduction', <<'__f331c057258d818fa9df99db0d8a159c');
   - javascript divergence.parser.js << end
     d.rebase (function () {
       var p = d.parser = '@matcher = $0'.ctor ({
-          fn: '@bound("match")'.fn(),
+          fn: '"fn".of("match".of($_)).apply(null, @_)'.fn(),
         fail: '{failure: $0}'.fn(),
         pass: '{stream: $0, result: $1}'.fn(),
        match: '@matcher.apply(this, @_)'.fn()});
@@ -1366,7 +1366,7 @@ meta::section('introduction', <<'__f331c057258d818fa9df99db0d8a159c');
 
       d.functional(p.prototype);
   - end
-__f331c057258d818fa9df99db0d8a159c
+__1826c413c24c3c4c37172433f44ddefd
 
 meta::section('main', <<'__7c52377abad549203a113c2c026596ce');
 - documentclass article
